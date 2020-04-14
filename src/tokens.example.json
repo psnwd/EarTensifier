@@ -3,6 +3,8 @@
     "ksoftToken": "",
     "mongoUsername": "",
     "mongoPass": "",
+    "mongoIP" : "localhost",// for localhsot => ${tokens.mongoIP}:${tokens.mongoPort}
+    "mongoPort" : "27017",
     "post": {
         "botListSpace": {
             "id": "",
