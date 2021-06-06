@@ -1,48 +1,39 @@
-const play = require('../../utils/play.js');
-const patreon = require('../../resources/patreon.json');
-const premium = require('../../utils/premium/premium.js');
+const Command = require('../../structures/Command');
+
+const play = require('../../player/loadTracks.js');
+const spawnPlayer = require('../../player/spawnPlayer.js');
 const { getData, getPreview } = require('spotify-url-info');
 
-module.exports = {
-	name: 'play',
-	description: 'Plays a song',
-	usage: '<search query>',
-	aliases: ['p'],
-	cooldown: '5',
-	args: true,
-	inVoiceChannel: true,
-	async execute(client, message, args) {
-		if (!args[0]) return message.channel.send('Please provide a search query.');
-
-		const permissions = message.member.voice.channel.permissionsFor(client.user);
-		if(!permissions.has('CONNECT')) return client.responses('noPermissionConnect', message);
-		if(!permissions.has('SPEAK')) return client.responses('noPermissionSpeak', message);
-
+module.exports = class Play extends Command {
+	constructor(client) {
+		super(client, {
+			name: 'play',
+			description: 'Plays a song',
+			usage: '<search query>',
+			aliases: ['p'],
+			cooldown: '4',
+			args: true,
+			inVoiceChannel: true,
+			botPermissions: ['CONNECT', 'SPEAK'],
+		});
+	}
+	async run(client, message, args) {
 		let player = client.music.players.get(message.guild.id);
-
-		if (!player) {
-			player = client.music.players.spawn({
-				guild: message.guild,
-				textChannel: message.channel,
-				voiceChannel: message.member.voice.channel,
-			});
-		}
-
-		if (player.pause == 'paused') return message.channel.send(`Cannot play/queue songs while paused. Do \`${client.settings.prefix} resume\` to play.`);
+		if (player && player.playing === false && player.current) return message.channel.send(`Cannot play/queue songs while paused. Do \`${client.settings.prefix} resume\` to play.`);
+		if (!player) player = await spawnPlayer(client, message);
 
 		const msg = await message.channel.send(`${client.emojiList.cd}  Searching for \`${args.join(' ')}\`...`);
 
-		if (await songLimit() == patreon.defaultMaxSongs && player.queue.size >= patreon.defaultMaxSongs) return msg.edit(`You have reached the **maximum** amount of songs (${patreon.defaultMaxSongs} songs). Want more songs? Consider donating here: https://www.patreon.com/eartensifier`);
-		if (await songLimit() == patreon.premiumMaxSongs && player.queue.size >= patreon.premiumMaxSongs) return msg.edit(`You have reached the **maximum** amount of songs (${patreon.premiumMaxSongs} songs). Want more songs? Consider donating here: https://www.patreon.com/eartensifier`);
-		if (await songLimit() == patreon.proMaxSongs && player.queue.size >= patreon.proMaxSongs) return msg.edit(`You have reached the **maximum** amount of songs (${patreon.proMaxSongs} songs). Want more songs? Contact the developer: \`Tetra#0001\``);
+		const songLimit = await client.songLimit(message.author.id, player.queue.length);
+		if (songLimit) return msg.edit(`You have reached the **maximum** amount of songs (${songLimit} songs). Want more songs? Consider donating here: https://www.patreon.com/eartensifier`);
 
 		let searchQuery;
-		if (args[0].startsWith('https://open.spotify.com')) {
+		if (args[0].startsWith(client.settings.spotifyURL)) {
 			const data = await getData(args.join(' '));
 			if (data.type == 'playlist' || data.type == 'album') {
-				const sL = await songLimit();
+				const sL = await client.getSongLimit(message.author.id);
 				let songsToAdd = 0;
-				if (player.queue.length == 0) { songsToAdd = Math.min(sL, data.tracks.items.length); }
+				if (!player.queue.length) { songsToAdd = Math.min(sL, data.tracks.items.length); }
 				else {
 					const totalSongs = player.queue.length + data.tracks.items.length;
 					if (totalSongs > sL) songsToAdd = Math.min(sL - player.queue.length, data.tracks.items.length);
@@ -60,12 +51,8 @@ module.exports = {
 					});
 				}
 				const playlistInfo = await getPreview(args.join(' '));
-				if (data.tracks.items.length != songsToAdd) {
-					if (await songLimit() == patreon.defaultMaxSongs) msg.edit(`**${playlistInfo.title}** (${songsToAdd} tracks) has been added to the queue by **${message.author.tag}**\nYou have reached the **maximum** amount of songs (${patreon.defaultMaxSongs} songs). Want more songs? Consider donating here: https://www.patreon.com/eartensifier`);
-					else if (await songLimit() == patreon.premiumMaxSongs) msg.edit(`**${playlistInfo.title}** (${songsToAdd} tracks) has been added to the queue by **${message.author.tag}**\nYou have reached the **maximum** amount of songs (${patreon.premiumMaxSongs} songs). Want more songs? Consider donating here: https://www.patreon.com/eartensifier`);
-					else if (await songLimit() == patreon.proMaxSongs) msg.edit(`**${playlistInfo.title}** (${songsToAdd} tracks) has been added to the queue by **${message.author.tag}**\nYou have reached the **maximum** amount of songs (${patreon.proMaxSongs} songs). Want more songs? Contact \`Tetra#0001\``);
-				}
-				else { msg.edit(`**${playlistInfo.title}** (${songsToAdd} tracks) has been added to the queue by **${message.author.tag}**`); }
+				if (data.tracks.items.length != songsToAdd) msg.edit('', client.queuedEmbed(playlistInfo.title, args[0], null, songsToAdd, message.author).setFooter('You have reached the max amount of songs in the queue. Purchase premium or pro to get more.'));
+				else msg.edit('', client.queuedEmbed(playlistInfo.title, args[0], null, songsToAdd, message.author));
 			}
 			else if (data.type == 'track') {
 				const track = await getPreview(args.join(' '));
@@ -82,13 +69,5 @@ module.exports = {
 			}
 			play(client, message, msg, player, searchQuery, false);
 		}
-
-		async function songLimit() {
-			const hasPremium = await premium(message.author.id, 'Premium');
-			const hasPro = await premium(message.author.id, 'Pro');
-			if (!hasPremium && !hasPro) return patreon.defaultMaxSongs;
-			if (hasPremium && !hasPro) return patreon.premiumMaxSongs;
-			if (hasPremium && hasPro) return patreon.proMaxSongs;
-		}
-	},
+	}
 };

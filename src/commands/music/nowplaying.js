@@ -1,38 +1,38 @@
+const Command = require('../../structures/Command');
+
 const Discord = require('discord.js');
-const { Utils } = require('erela.js');
 
-module.exports = {
-	name: 'nowplaying',
-	description: 'Displays the song that is currently playing',
-	aliases: ['playing', 'np'],
-	playing: true,
-	async execute(client, message) {
+
+module.exports = class NowPlaying extends Command {
+	constructor(client) {
+		super(client, {
+			name: 'nowplaying',
+			description: 'Displays the song that is currently playing',
+			aliases: ['playing', 'np'],
+			playing: true,
+		});
+	}
+	async run(client, message) {
 		const player = client.music.players.get(message.guild.id);
+		const { title, author, duration, requester, uri, identifier } = player.current;
 
-		const { title, author, duration, requester, uri } = player.queue[0];
-		if (player.position < 5000) {
-			const embed = new Discord.MessageEmbed()
-				.setColor(client.colors.main)
-				.setTitle(player.playing ? 'Now Playing' : 'Paused')
-				.setThumbnail(player.queue[0].displayThumbnail('default'))
-				.setDescription(`[${title}](${uri})`)
-				.addField('Duration', Utils.formatTime(duration, true), true)
-				.addField('Requested by', requester, true);
-			return message.channel.send(embed);
+		const parsedCurrentDuration = client.formatDuration(player.position);
+		const parsedDuration = client.formatDuration(duration);
+		const part = Math.floor((player.position / duration) * client.settings.embedDurationLength);
+		const uni = player.playing ? '▶' : '⏸️';
 
-		}
-		else {
-			let amount = `${Utils.formatTime(player.position, true)}`;
-			if(amount < 60) amount = `00:${amount}`;
-			const part = Math.floor((player.position / duration) * 10);
-			const embed = new Discord.MessageEmbed()
-				.setColor(client.colors.main)
-				.setTitle(player.playing ? 'Now Playing' : 'Paused')
-				.setThumbnail(player.queue[0].displayThumbnail('default'))
-				.setDescription(`[${title}](${uri})\n\n${amount}   ${'▬'.repeat(part) + '⚪' + '▬'.repeat(10 - part)}   ${Utils.formatTime(duration, true)}`)
-				.addField('Author', author, true)
-				.addField('Requested by', requester, true);
-			return message.channel.send('', embed);
-		}
-	},
+		const thumbnail = `https://img.youtube.com/vi/${identifier}/default.jpg`;
+		const user = `<@${!requester.id ? requester : requester.id}>`;
+
+		const embed = new Discord.MessageEmbed()
+			.setColor(client.colors.main)
+			.setAuthor(player.playing ? 'Now Playing' : 'Paused', 'https://cdn.discordapp.com/emojis/673357192203599904.gif?v=1')
+			.setThumbnail(thumbnail)
+			.setDescription(`**[${title}](${uri})**`)
+			.addField('Author', author, true)
+			.addField('Requested By', user, true)
+			.addField('Duration', `\`\`\`${parsedCurrentDuration}/${parsedDuration}  ${uni} ${'─'.repeat(part) + '⚪' + '─'.repeat(client.settings.embedDurationLength - part)}\`\`\``);
+
+		return message.channel.send('', embed);
+	}
 };

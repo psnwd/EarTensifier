@@ -2,7 +2,6 @@ const mongoose = require('mongoose');
 
 const userSchema = mongoose.Schema({
 	authorID: String,
-	authorName: String,
 	bio: String,
 	songsPlayed: Number,
 	commandsUsed: Number,
@@ -10,7 +9,11 @@ const userSchema = mongoose.Schema({
 	premium: Boolean,
 	pro: Boolean,
 	developer: Boolean,
-	favorites: Array,
+	moderator: Boolean,
+	voted: Boolean,
+	votedTimes: Number,
+	votedConst: Boolean,
+	lastVoted: String,
 });
 
 module.exports = mongoose.model('users', userSchema);

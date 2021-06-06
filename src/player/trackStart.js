@@ -1,12 +1,15 @@
-const { Utils } = require('erela.js');
+/* eslint-disable no-unused-vars */
 const Discord = require('discord.js');
-const bot = require('../models/bot.js');
 const users = require('../models/user.js');
 const songs = require('../models/song.js');
+const bot = require('../models/bot.js');
 
 module.exports = async (client, textChannel, title, duration, author, uri) => {
-	const currentSong = client.music.players.get(textChannel.guild.id).queue[0];
-	const requester = currentSong.requester.username + '#' + currentSong.requester.discriminator;
+	const currentSong = client.music.players.get(textChannel.guild.id).current;
+	const player = client.music.players.get(textChannel.guild.id);
+	player.futurePrevious = player.current;
+	let requester = `<@${currentSong.requester.id}>`;
+	if(!currentSong.requester.id) requester = `<@${currentSong.requester}>`;
 	const thumbnail = `https://img.youtube.com/vi/${currentSong.identifier}/default.jpg`;
 	addDB(uri, title, author, duration, uri, thumbnail);
 
@@ -14,63 +17,82 @@ module.exports = async (client, textChannel, title, duration, author, uri) => {
 		clientID: client.user.id,
 	}, async (err, b) => {
 		if (err) client.log(err);
-
 		b.songsPlayed += 1;
 		await b.save().catch(e => client.log(e));
 	});
 
-	users.findOne({
-		authorID: requester.id,
-	}, async (err, u) => {
-		if (err) client.log(err);
-
-		u.songsPlayed += 1;
-		await u.save().catch(e => client.log(e));
+	users.findOne({ authorID: (!currentSong.requester.id ? currentSong.requester : currentSong.requester.id) }).then(async messageUser => {
+		if (!messageUser) {
+			console.log('not found');
+			const newUser = new users({
+				authorID: requester.id,
+				bio: '',
+				songsPlayed: 1,
+				commandsUsed: 0,
+				blocked: false,
+				premium: false,
+				pro: false,
+				developer: false,
+			});
+			await newUser.save().catch(e => this.client.log(e));
+		}
+		else {
+			messageUser.songsPlayed++;
+			await messageUser.save().catch(e => this.client.log(e));
+		}
 	});
 
 	const embed = new Discord.MessageEmbed()
-		.setAuthor(author);
+		.setAuthor('Now Playing', 'https://cdn.discordapp.com/emojis/673357192203599904.gif?v=1');
 	if (uri.includes('soundcloud')) {
-		embed.attachFiles(['./src/assets/soundcloud.png']);
+		embed.attachFiles(['./assets/soundcloud.png']);
 		embed.setThumbnail('attachment://soundcloud.png');
 		embed.setFooter('SoundCloud');
 		embed.setColor(client.colors.soundcloud);
 	}
 	else if (uri.includes('bandcamp')) {
-		embed.attachFiles(['./src/assets/bandcamp.png']);
+		embed.attachFiles(['./assets/bandcamp.png']);
 		embed.setThumbnail('attachment://bandcamp.png');
-		embed.setFooter('Source: bandcamp');
+		embed.setFooter('bandcamp');
 		embed.setColor(client.colors.bandcamp);
 	}
+	// mixer
 	else if (uri.includes('beam.pro')) {
-		embed.attachFiles(['./src/assets/mixer.png']);
+		embed.attachFiles(['./assets/mixer.png']);
 		embed.setThumbnail('attachment://mixer.png');
-		embed.setFooter('Source: Mixer');
+		embed.setFooter('Mixer');
 		embed.setColor(client.colors.mixer);
 	}
 	else if (uri.includes('twitch')) {
-		embed.attachFiles(['./src/assets/twitch.png']);
+		embed.attachFiles(['./assets/twitch.png']);
 		embed.setThumbnail('attachment://twitch.png');
-		embed.setFooter('Source: Twitch');
+		embed.setFooter('Twitch');
 		embed.setColor(client.colors.twitch);
 	}
 	else if (uri.includes('youtube')) {
 		embed.setThumbnail(thumbnail);
-		embed.setFooter('Source: Youtube');
+		embed.setFooter('Youtube');
 		embed.setColor(client.colors.youtube);
 	}
 	else {
 		embed.setColor(client.colors.main);
-		embed.setFooter('Source: Other');
+		embed.setFooter('Other');
 	}
 
-	if (duration.toString().length > 10) { embed.addField('Duration', '∞', true); }
-	else { embed.addField('Duration', `${Utils.formatTime(duration, true)}`, true); }
+	const currentDuration = client.music.players.get(textChannel.guild.id).position;
+	const playing = client.music.players.get(textChannel.guild.id).playing;
+	const parsedCurrentDuration = client.formatDuration(currentDuration);
+	const parsedDuration = client.formatDuration(duration);
+	const part = Math.floor((currentDuration / duration) * client.settings.embedDurationLength);
+	const uni = playing ? '▶' : '⏸️';
 
-	embed.setDescription(`**[${title}](${uri})**`);
+	embed.addField('Author', author, true);
+	embed.setDescription(`**[${title}](${uri})** [${parsedDuration}]`);
 	embed.addField('Requested by', requester, true);
+	// embed.addField(`Duration \`${parsedCurrentDuration}/${parsedDuration}\``, `\`\`\`${uni} ${'─'.repeat(part) + '⚪' + '─'.repeat(client.settings.embedDurationLength - part)}\`\`\``);
 	embed.setTimestamp();
-	textChannel.send(embed);
+
+	return textChannel.send(embed);
 };
 
 function addDB(id, title, author, duration, url, thumbnail) {

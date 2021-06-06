@@ -1,19 +1,30 @@
-const { earrape } = require('../../resources/volume.json');
+const Command = require('../../structures/Command');
 
-module.exports = {
-	name: 'earrape',
-	description: 'Earrapes a song.',
-	aliases: ['veryloud', 'hell', 'loud'],
-	cooldown: '10',
-	inVoiceChannel: true,
-	sameVoiceChannel: true,
-	playing: true,
-	async execute(client, message) {
+const Discord = require('discord.js');
+
+const { earrape } = require('../../../config/volume.js');
+
+module.exports = class Earrape extends Command {
+	constructor(client) {
+		super(client, {
+			name: 'earrape',
+			description: 'Earrapes a song.',
+			aliases: ['veryloud', 'hell', 'loud'],
+			cooldown: '4',
+			inVoiceChannel: true,
+			sameVoiceChannel: true,
+			playing: true,
+		});
+	}
+	async run(client, message) {
 		const player = client.music.players.get(message.guild.id);
 
 		player.setVolume(earrape);
-		player.setEQ(Array(6).fill(0).map((n, i) => ({ band: i, gain: 0.5 })));
+		player.setEQ(...Array(6).fill(0).map((n, i) => ({ band: i, gain: 0.5 })));
 
-		return message.channel.send('Tensity set to **earrape**');
-	},
+		const embed = new Discord.MessageEmbed()
+			.setDescription('Tensity set to **earrape**. To reset the tensity, type `ear reset`.')
+			.setColor(client.colors.main);
+		return message.channel.send(embed);
+	}
 };

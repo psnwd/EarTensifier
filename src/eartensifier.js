@@ -1,20 +1,12 @@
-const Discord = require('discord.js');
+const Sentry = require('@sentry/node');
 
-const client = new Discord.Client({
-	// messageCacheMaxSize: 10,
-	// messageCacheLifetime: 20,
-	// messageSweepInterval: 30,
+const EarTensifier = require('./structures/Client');
+const client = new EarTensifier(process.env.DISCORD_TOKEN);
+client.login();
+
+Sentry.init({
+	dsn: process.env.SENTRY_URL,
+	environment: process.env.SENTRY_ENVIRONMENT,
 });
 
-client.log = (msg) => { console.log(`[${new Date().toLocaleString()}] > ${msg}`); };
-client.commands = new Discord.Collection();
-client.settings = require('./settings.js');
-client.responses = require('./utils/responses.js');
-client.filters = require('./resources/filters.json');
-client.colors = require('./resources/colors.json');
-client.emojiList = require('./resources/emojis.json');
-client.errors = require('./utils/errors.js');
-
-['commands', 'events'].forEach(handler => require(`./utils/handlers/${handler}`)(client));
-
-client.login(require('./tokens.json').discordToken);
+['commands', 'events'].forEach(handler => require(`./handlers/${handler}`)(client));

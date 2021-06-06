@@ -1,28 +1,31 @@
-const play = require('../../utils/play.js');
+const Command = require('../../structures/Command');
+
+const play = require('../../player/loadTracks.js');
+const spawnPlayer = require('../../player/spawnPlayer.js');
 const { getData, getPreview } = require('spotify-url-info');
 
-module.exports = {
-	name: 'playskip',
-	description: 'Skips the current playing song and immediately plays the song provided.',
-	args: true,
-	usage: '<search query>',
-	cooldown: '10',
-	inVoiceChannel: true,
-	sameVoiceChannel: true,
-	player: true,
-	async execute(client, message, args) {
-		const player = client.music.players.spawn({
-			guild: message.guild,
-			textChannel: message.channel,
-			voiceChannel: message.member.voice.channel,
+module.exports = class Playskip extends Command {
+	constructor(client) {
+		super(client, {
+			name: 'playskip',
+			description: 'Skips the current playing song and immediately plays the song provided.',
+			args: true,
+			usage: '<search query>',
+			cooldown: '4',
+			inVoiceChannel: true,
+			sameVoiceChannel: true,
+			player: true,
 		});
-
-		if (player.pause == 'paused') return message.channel.send(`Cannot play/queue songs while paused. Do \`${client.settings.prefix} resume\` to play.`);
+	}
+	async run(client, message, args) {
+		let player = client.music.players.get(message.guild.id);
+		if (player && player.playing === false) return message.channel.send(`Cannot play/queue songs while paused. Do \`${client.settings.prefix} resume\` to play.`);
+		if (!player) player = await spawnPlayer(client, message);
 
 		const msg = await message.channel.send(`${client.emojiList.cd}  Searching for \`${args.join(' ')}\`...`);
 
 		let searchQuery;
-		if (args[0].startsWith('https://open.spotify.com')) {
+		if (args[0].startsWith(client.settings.spotifyURL)) {
 			const data = await getData(args.join(' '));
 			client.log(data);
 			if (data.type == 'playlist' || data.type == 'album') {
@@ -47,10 +50,12 @@ module.exports = {
 		async function playskip() {
 			const delay = ms => new Promise(res => setTimeout(res, ms));
 			await delay(1500);
-			player.queue.splice(1, 0, player.queue[player.queue.size - 1]);
+			player.queue.splice(0, 0, player.queue[player.queue.length - 1]);
 			await delay(500);
 			player.queue.pop();
+			if(player.trackRepeat) player.setTrackRepeat(false);
+			if(player.queueRepeat) player.setQueueRepeat(false);
 			player.stop();
 		}
-	},
+	}
 };
