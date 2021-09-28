@@ -58,7 +58,7 @@ module.exports = class Message extends Event {
 				if (rawMessageContent.indexOf(this.client.settings.prefix) === 0) {
 					prefix = this.client.settings.prefix;
 				}
-				else if (rawMessageContent.indexOf(s.prefix) === 0) {
+				else if (rawMessageContent.indexOf(s.prefix.toLowerCase()) === 0) {
 					prefix = s.prefix;
 				}
 				else if (rawMessageContent.split(' ')[0].match(mentionPrefix)) {
@@ -143,7 +143,7 @@ module.exports = class Message extends Event {
 				else if (client.aliases.has(command)) cmd = client.aliases.get(command);
 				else return;
 
-				if(message.guild.id != '264445053596991498') {
+				if (message.guild.id != '264445053596991498') {
 					const permissions = message.channel.permissionsFor(client.user);
 					if (!permissions.has('SEND_MESSAGES') || !permissions.has('READ_MESSAGE_HISTORY')) return message.author.send(`I don't have permission to read/send messages in **${message.channel.name}**!\nPlease join the support server if you need help: ${client.settings.server}`);
 					if (!permissions.has('EMBED_LINKS')) return message.channel.send(`I don't have permission to send embeds in **${message.channel.name}**!\nPlease join the support server if you need help: ${client.settings.server}`);
@@ -197,13 +197,13 @@ module.exports = class Message extends Event {
 				if (prefix == client.settings.prefix) {
 					if (!args[0] && cmd.args === true) {
 						const embed = new Discord.MessageEmbed()
-						.setDescription(`You didn't provide any arguments ${message.author}.\nCorrect Usage: \`ear ${commandName} ${cmd.usage}\``);
+							.setDescription(`You didn't provide any arguments ${message.author}.\nCorrect Usage: \`ear ${commandName} ${cmd.usage}\``);
 						return message.channel.send(embed);
 					}
 				}
 				else if (!args[0] && cmd.args === true) {
 					const embed = new Discord.MessageEmbed()
-					.setDescription(`You didn't provide any arguments ${message.author}.\nCorrect Usage: \`${prefix} ${commandName} ${cmd.usage}\` or \`${prefix}${cmd.name} ${cmd.usage}\``);
+						.setDescription(`You didn't provide any arguments ${message.author}.\nCorrect Usage: \`${prefix} ${commandName} ${cmd.usage}\` or \`${prefix}${cmd.name} ${cmd.usage}\``);
 					return message.channel.send(embed);
 				}
 
@@ -239,7 +239,7 @@ module.exports = class Message extends Event {
 				}
 
 				try {
-					
+
 					cmd.run(client, message, args);
 				}
 				catch (e) {

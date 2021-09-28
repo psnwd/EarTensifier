@@ -3,10 +3,11 @@ const mongoose = require('mongoose');
 const Sentry = require('@sentry/node');
 const chalk = require('chalk');
 const Statcord = require('statcord.js');
-// const axios = require('axios');
-
 const Event = require('../../structures/Event');
 const createManager = require('../../player/createManager.js');
+const post = require('../../handlers/post.js');
+const blapi = require('blapi');
+const botLists = require('../../../config/botlists.json');
 
 mongoose.connect(process.env.MONGO_URL, {
 	useNewUrlParser: true,
@@ -27,7 +28,7 @@ module.exports = class Ready extends Event {
 		createManager(this.client);
 		this.client.music.init(this.client.user.id);
 
-		const status = 'ear help';
+		const status = `${this.client.settings.prefix}help`;
 		const statusType = 'LISTENING';
 		this.client.user.setActivity(`${status}`, { type: `${statusType}` });
 
@@ -37,7 +38,7 @@ module.exports = class Ready extends Event {
 			const totalMembers = memberNum.reduce((prev, memberCount) => prev + memberCount, 0);
 			const totalGuilds = guildNum.reduce((total, shard) => total + shard, 0);
 
-			figlet(this.client.user.username, function(err, data) {
+			figlet(this.client.user.username, function (err, data) {
 				if (err) {
 					console.log('Something went wrong...');
 					console.dir(err);
@@ -46,16 +47,23 @@ module.exports = class Ready extends Event {
 				console.log(chalk.magenta.bold(data));
 			});
 
-			this.client.log(chalk.magenta.underline.bold(`Ear Tensifier is online: ${this.client.shard.count} shards, ${totalGuilds} servers and ${totalMembers} members.`));
+			this.client.log(chalk.magenta.underline.bold(`${this.client.user.username} is online: ${this.client.shard.count} shards, ${totalGuilds} servers and ${totalMembers} members.`));
 
 			if (this.client.user.id == '472714545723342848') {
 				Statcord.ShardingClient.post(this.client);
-				setInterval(async function() {
+
+				setInterval(async function () {
 					Statcord.ShardingClient.post(this.client);
 				}, 1800000);
 
 				require('../../webhooks/blsHook.js').startUp(this.client);
 				require('../../webhooks/dblHook.js').startUp(this.client);
+
+				blapi.setLogging({
+					extended: true
+				});
+				blapi.manualPost(totalGuilds, this.client.user.id, botLists, null, this.client.shard.count, null);
+				this.client.log('Posted bot stats to blapi.');
 			}
 		}
 	}
