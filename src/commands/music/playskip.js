@@ -19,7 +19,6 @@ module.exports = class Playskip extends Command {
 	}
 	async run(client, message, args) {
 		let player = client.music.players.get(message.guild.id);
-		if (player && player.playing === false) return message.channel.send(`Cannot play/queue songs while paused. Do \`${client.settings.prefix} resume\` to play.`);
 		if (!player) player = await spawnPlayer(client, message);
 
 		const msg = await message.channel.send(`${client.emojiList.cd}  Searching for \`${args.join(' ')}\`...`);
@@ -38,7 +37,8 @@ module.exports = class Playskip extends Command {
 		}
 		else {
 			searchQuery = args.join(' ');
-			if (['youtube', 'soundcloud', 'bandcamp', 'mixer', 'twitch'].includes(args[0].toLowerCase())) {
+			if (['youtube', 'soundcloud', 'bandcamp', 'twitch'].includes(args[0].toLowerCase())) {
+				if (args[0].toLowerCase().includes('soundcloud')) return message.channel.send("Soundcloud has been temporarily disabled.")
 				searchQuery = {
 					source: args[0],
 					query: args.slice(1).join(' '),
@@ -53,8 +53,8 @@ module.exports = class Playskip extends Command {
 			player.queue.splice(0, 0, player.queue[player.queue.length - 1]);
 			await delay(500);
 			player.queue.pop();
-			if(player.trackRepeat) player.setTrackRepeat(false);
-			if(player.queueRepeat) player.setQueueRepeat(false);
+			if (player.trackRepeat) player.setTrackRepeat(false);
+			if (player.queueRepeat) player.setQueueRepeat(false);
 			player.stop();
 		}
 	}
