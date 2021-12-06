@@ -1,14 +1,13 @@
-const Sentry = require('@sentry/node');
-
+require('events').defaultMaxListeners = 30;
 const EarTensifier = require('./structures/Client');
-const client = new EarTensifier(process.env.DISCORD_TOKEN);
-client.login();
+const client = new EarTensifier();
 
-if (process.env.SENTRY_URL) {
-	Sentry.init({
-		dsn: process.env.SENTRY_URL,
-		environment: process.env.SENTRY_ENVIRONMENT,
-	});
-}
+process.on('uncaughtException', (e) => {
+    client.logger.error(e);
+});
 
-['commands', 'events'].forEach(handler => require(`./handlers/${handler}`)(client));
+process.on('unhandledRejection', (e) => {
+    client.logger.error(e);
+});
+
+client.login(process.env.DISCORD_TOKEN);
