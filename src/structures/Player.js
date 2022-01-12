@@ -64,7 +64,7 @@ module.exports = class Player extends TrackPlayer {
     }
 
     skip() {
-        this.manager.trackEnd(this);
+        this.manager.trackEnd(this, false);
     }
 
     get(key) {
@@ -109,17 +109,29 @@ module.exports = class Player extends TrackPlayer {
         return super.getDuration();
     }
 
-    destroy() {
-        if (this.stayInVoice) return;
+    async softDestroy(force) {
+        try {
+            if (this.stayInVoice && !force) return;
 
-        if (this.nowPlayingMessage) {
-            clearInterval(this.nowPlayingMessage.interval);
-            this.nowPlayingMessage.edit({ components: [] });
+            if (this.nowPlayingMessage) {
+                if (this.nowPlayingMessageInterval) clearInterval(this.nowPlayingMessageInterval);
+                // eslint-disable-next-line no-empty-function
+                await this.nowPlayingMessage.edit({ components: [] }).catch(() => { });
+            }
+            if (this.connection) this.disconnect();
+            if (this.player) super.destroy();
+
+            this.manager.players.delete(this.guild.id);
         }
-        if (this.connection) this.disconnect();
+        catch (e) {
+            this.manager.logger.error(e);
+        }
+    }
+
+    async destroy(force) {
         super.destroy();
 
-        this.manager.players.delete(this.guild.id);
+        await this.softDestroy(force).catch((e) => this.manager.logger.error(e));
     }
 
     setTrackRepeat(repeat) {
@@ -129,7 +141,6 @@ module.exports = class Player extends TrackPlayer {
         }
         else {
             this.trackRepeat = false;
-            this.queueRepeat = false;
         }
 
         return this;
@@ -141,7 +152,6 @@ module.exports = class Player extends TrackPlayer {
             this.queueRepeat = true;
         }
         else {
-            this.trackRepeat = false;
             this.queueRepeat = false;
         }
 
@@ -149,7 +159,7 @@ module.exports = class Player extends TrackPlayer {
     }
 
     pause(pause) {
-        if (this.queue.current) {
+        if (this.queue.current && this.nowPlayingMessage) {
             const embed = new MessageEmbed(this.nowPlayingMessage.embeds[0].setAuthor(this.queue.current.author, this.pause ? 'https://eartensifier.net/images/cd.png' : 'https://eartensifier.net/images/cd.gif', this.queue.current.url));
             this.nowPlayingMessage.edit({ content: null, embeds: [embed] });
         }

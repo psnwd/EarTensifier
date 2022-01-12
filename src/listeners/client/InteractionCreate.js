@@ -18,8 +18,8 @@ module.exports = class InteractionCreate extends Event {
             if (!player) return;
             switch (interaction.customId) {
                 case 'PREVIOUS_BUTTON': {
-                    if (player.queue.previous.length > 0) {
-                        player.queue.unshift(player.queue.previous.pop());
+                    if (player.queue.previous) {
+                        player.queue.unshift(player.queue.previous);
                         player.skip();
                     }
                     break;
@@ -45,7 +45,6 @@ module.exports = class InteractionCreate extends Event {
                 }
                 case 'SKIP_BUTTON': {
                     if (player.trackRepeat) player.setTrackRepeat(false);
-                    if (player.queueRepeat) player.setQueueRepeat(false);
                     if (player) player.skip();
                     break;
                 }
@@ -59,13 +58,13 @@ module.exports = class InteractionCreate extends Event {
 
         const ctx = new Context(interaction, interaction.options.data);
         const messageHelper = new MessageHelper(this.client, ctx);
-        ctx.messageHelper = messageHelper;
         await messageHelper.createServer();
-        await messageHelper.createUser();
+        ctx.messageHelper = messageHelper;
 
         if (await messageHelper.isIgnored() || await messageHelper.isBlacklisted()) return;
 
         this.client.databaseHelper.incrementTimesCommandUsed(commandName);
+        await messageHelper.createUser();
 
         if (!cooldowns.has(commandName)) {
             cooldowns.set(commandName, new Discord.Collection());

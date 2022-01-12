@@ -4,7 +4,6 @@ const { MessageEmbed, MessageActionRow, MessageSelectMenu, MessageButton } = req
 
 const QueueHelper = require('../../helpers/QueueHelper');
 const Command = require('../../structures/Command');
-const FileTrack = require('../../structures/FileTrack');
 
 module.exports = class Search extends Command {
     constructor(client) {
@@ -21,7 +20,7 @@ module.exports = class Search extends Command {
                 ],
             },
             args: true,
-            acceptsAttachments: true,
+            acceptsAttachments: false,
             voiceRequirements: {
                 isInVoiceChannel: true,
             },
@@ -82,9 +81,6 @@ module.exports = class Search extends Command {
                 case 'youtube':
                     results = await Source.Youtube.search(query);
                     break;
-                case 'file':
-                    results = new FileTrack(query);
-                    break;
                 default:
                     results = await Source.resolve(query);
                     break;
@@ -95,14 +91,9 @@ module.exports = class Search extends Command {
                 source = 'youtube';
             }
 
-            if (!results || results.length === 0) {
-                results = new FileTrack(query, ctx.author);
-                source = 'file';
-            }
-
             if (!results) return ctx.editMessage('No results found.');
 
-            if (results instanceof Track || results instanceof FileTrack) {
+            if (results instanceof Track) {
                 const track = results;
                 track.requester = ctx.author;
                 if (results instanceof Track) {
@@ -173,7 +164,7 @@ module.exports = class Search extends Command {
             for (let i = 0; i < tracks.length; i++) {
                 const track = tracks[i];
                 selectMenuArray.push({
-                    label: track.title,
+                    label: `${i + 1}. ${track.title}`,
                     description: track.author,
                     value: i.toString(),
                 });

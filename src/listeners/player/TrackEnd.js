@@ -9,18 +9,27 @@ module.exports = class TrackEnd extends Event {
         super(...args);
     }
 
-    async run(player, track, finished) {
-        player.queue.previous.push(track);
+async run(player, track, finished) {
+        player.queue.previous = track;
 
         const shouldSend = await DatabaseHelper.shouldSendNowPlayingMessage(player.textChannel.guild);
-        if (!shouldSend || !player.nowPlayingMessage) return;
 
-        const parsedDuration = formatDuration(track.duration);
-        const embed = new MessageEmbed(player.nowPlayingMessage.embeds[0].setAuthor(track.author, 'https://eartensifier.net/images/cd.png', track.url));
+        try {
+            if (player.nowPlayingMessageInterval) {
+                clearInterval(player.nowPlayingMessageInterval);
+                player.nowPlayingMessageInterval = null;
+            }
+            if (!shouldSend || !player.nowPlayingMessage) return;
 
-        if (finished) embed.setDescription(`${parsedDuration}  ${this.client.config.emojis.progress1}${this.client.config.emojis.progress2.repeat(13)}${this.client.config.emojis.progress8}  ${parsedDuration}`);
-        player.nowPlayingMessage.edit({ components: [], embeds: [embed] });
+            const parsedDuration = formatDuration(track.duration);
+            const embed = new MessageEmbed(player.nowPlayingMessage.embeds[0].setAuthor(track.author, 'https://eartensifier.net/images/cd.png', track.url));
 
-        clearInterval(player.nowPlayingMessage.interval);
+            if (finished) embed.setDescription(`${parsedDuration}  ${this.client.config.emojis.progress1}${this.client.config.emojis.progress2.repeat(13)}${this.client.config.emojis.progress8}  ${parsedDuration}`);
+
+            await player.nowPlayingMessage.edit({ components: [], embeds: [embed] });
+        }
+        catch (e) {
+            this.client.logger.error(e);
+        }
     }
 };

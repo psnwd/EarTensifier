@@ -19,7 +19,7 @@ module.exports = class VoiceStateUpdate extends Event {
             return;
         }
 
-        if (!player.player) return;
+        if (!player.player || player.waitingMessage) return;
         const embed = new MessageEmbed()
             .setDescription(`Leaving <#${oldState.guild.me.voice.channel.id}> in ${this.client.config.voiceTimeout / 60 / 1000} minutes because I was left alone.`)
             .setColor(this.client.config.colors.default);
@@ -31,16 +31,17 @@ module.exports = class VoiceStateUpdate extends Event {
         await delay(this.client.config.voiceTimeout);
 
         if (!player.waitingMessage) return;
+        if (!newState.guild.me.voice.channel) return;
         const voiceMembers = newState.guild.me.voice.channel.members.filter(member => !member.user.bot).size;
         if (!voiceMembers || voiceMembers == 0) {
             let newPlayer = this.client.music.players.get(newState.guild.id);
             if (player) {
-                newPlayer.destroy();
+                newPlayer.destroy(false);
             }
             else {
                 newPlayer = await this.client.music.newPlayer(oldState.guild, oldState.guild.me.voice.channel, player.textChannel);
                 await newPlayer.connect();
-                newPlayer.destroy();
+                newPlayer.destroy(false);
             }
 
             const embed2 = new MessageEmbed()

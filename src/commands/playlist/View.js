@@ -4,7 +4,6 @@ const { MessageEmbed } = require('discord.js');
 const Command = require('../../structures/Command');
 const Playlist = require('../../models/Playlist');
 const formatDuration = require('../../utils/music/formatDuration');
-const FileTrack = require('../../structures/FileTrack');
 
 module.exports = class View extends Command {
     constructor(client) {
@@ -35,7 +34,7 @@ module.exports = class View extends Command {
             name: playlistName,
             creator: ctx.author.id,
         }, async (err, p) => {
-            if (err) client.logger.erro(err);
+            if (err) client.logger.error(err);
 
             if (!p) {
                 const embed = new MessageEmbed()

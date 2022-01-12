@@ -7,7 +7,6 @@ const Player = require('./Player');
 const QueueHelper = require('../helpers/QueueHelper');
 const DatabaseHelper = require('../helpers/DatabaseHelper');
 const Logger = require('./Logger');
-const FileTrack = require('./FileTrack');
 
 module.exports = class Manager extends EventEmitter {
     constructor() {
@@ -36,11 +35,12 @@ module.exports = class Manager extends EventEmitter {
         });
 
         player.on('finish', () => {
-            this.trackEnd(player);
+            this.trackEnd(player, true);
         });
 
         player.on('error', (err) => {
-            this.logger.error(err);
+            this.logger.error(`${player.queue.current.id} ${err}`);
+            player.skip();
         });
 
         return player;
@@ -54,9 +54,8 @@ module.exports = class Manager extends EventEmitter {
         this.emit('trackStart', player, track);
     }
 
-    trackEnd(player) {
+    trackEnd(player, finished) {
         const track = player.queue.current;
-        const finished = Math.ceil(player.getTime()) >= (player.getDuration() ? player.getDuration() : track.duration);
         if (!track.duration) track.duration = player.getDuration();
 
         if (track && player.trackRepeat) {
@@ -75,7 +74,6 @@ module.exports = class Manager extends EventEmitter {
         }
 
         if (player.queue.length > 0) {
-            player.queue.previous.push(track);
             player.queue.current = player.queue.shift();
 
             this.emit('trackEnd', player, track, finished);
@@ -86,7 +84,6 @@ module.exports = class Manager extends EventEmitter {
         if (!player.queue.length && player.queue.current) {
             this.emit('trackEnd', player, track, finished);
             player.stop();
-            player.queue.previous.push(track);
             player.queue.current = null;
             player.playing = false;
             return this.queueEnd(player, track);
@@ -95,7 +92,6 @@ module.exports = class Manager extends EventEmitter {
 
     queueEnd(player, track) {
         this.emit('queueEnd', player, track);
-        player.destroy();
     }
 
     get(guild) {
@@ -121,9 +117,6 @@ module.exports = class Manager extends EventEmitter {
                 case 'youtube':
                     track = (await Source.Youtube.search(query))[0];
                     break;
-                case 'file':
-                    track = new FileTrack(query, requester);
-                    break;
                 default:
                     track = await Source.resolve(query);
                     break;
@@ -133,29 +126,20 @@ module.exports = class Manager extends EventEmitter {
                 track = (await Source.Youtube.search(query))[0];
                 source = 'youtube';
             }
-            if (!track) {
-                track = new FileTrack(query, requester);
-                source = 'file';
-            }
 
-            if (!track || (!(track instanceof TrackPlaylist) && !track.duration && !(await FileTrack.getDuration(track.url)))) throw new Error('No track found');
+            if (!track) throw new Error('No track found');
             else {
                 if (track instanceof TrackPlaylist) {
                     track.forEach(t => {
                         t.requester = requester;
-                        t.icon = QueueHelper.reduceThumbnails(t.icons);
+                        t.icon = null;
                         t.thumbnail = QueueHelper.reduceThumbnails(t.thumbnails);
                     });
                 }
-                else if (track.source != 'file') {
-                    track.requester = requester;
-                    track.icon = QueueHelper.reduceThumbnails(track.icons);
-                    track.thumbnail = QueueHelper.reduceThumbnails(track.thumbnails);
-                }
                 else {
                     track.requester = requester;
-                    track.platform = 'file';
-                    track.duration = await FileTrack.getDuration(track.url);
+                    track.icon = null;
+                    track.thumbnail = QueueHelper.reduceThumbnails(track.thumbnails);
                 }
                 return track;
             }
