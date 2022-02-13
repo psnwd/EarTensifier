@@ -112,10 +112,13 @@ module.exports = class Manager extends EventEmitter {
                     track = (await Source.Soundcloud.search(query))[0];
                     break;
                 case 'spotify':
-                    track = await Source.resolve(query);
+                    track = (await Source.Spotify.search(query))[0];
                     break;
                 case 'youtube':
                     track = (await Source.Youtube.search(query))[0];
+                    break;
+                case 'apple':
+                    track = (await Source.AppleMusic.search(query))[0];
                     break;
                 default:
                     track = await Source.resolve(query);

@@ -42,18 +42,24 @@ module.exports = class Search extends Command {
         let query;
         let source;
         if (args[0]) {
-            query = args.slice(0).join(' ');
-            if (args[0].toLowerCase() === 'soundcloud' || args[0].toLowerCase() === 'sc') {
-                query = args.slice(1).join(' ');
-                source = 'soundcloud';
-            }
-            else if (args[0].toLowerCase() === 'spotify' || args[0].toLowerCase() === 'sp') {
-                query = args.slice(1).join(' ');
-                source = 'spotify';
-            }
-            else if (args[0].toLowerCase() === 'youtube' || args[0].toLowerCase() === 'yt') {
-                query = args.slice(1).join(' ');
-                source = 'youtube';
+            const platform = args[0].toLowerCase();
+            query = args.slice(1).join(' ');
+            switch (platform) {
+                case 'yt' || 'youtube':
+                    source = 'youtube';
+                    break;
+                case 'sc' || 'soundcloud':
+                    source = 'soundcloud';
+                    break;
+                case 'sp' || 'spotify':
+                    source = 'spotify';
+                    break;
+                case 'apple' || 'applemusic':
+                    source = 'apple';
+                    break;
+                default:
+                    query = args.slice(0).join(' ');
+                    break;
             }
         }
         else {
@@ -76,10 +82,13 @@ module.exports = class Search extends Command {
                     results = await Source.Soundcloud.search(query);
                     break;
                 case 'spotify':
-                    results = await Source.resolve(query);
+                    results = await Source.Spotify.search(query);
                     break;
                 case 'youtube':
                     results = await Source.Youtube.search(query);
+                    break;
+                case 'apple':
+                    results = await Source.AppleMusic.search(query);
                     break;
                 default:
                     results = await Source.resolve(query);
@@ -163,8 +172,10 @@ module.exports = class Search extends Command {
             const selectMenuArray = [];
             for (let i = 0; i < tracks.length; i++) {
                 const track = tracks[i];
+                let label = `${i + 1}. ${track.title}`;
+                if (label.length > 100) label = label.substring(0, 97) + '...';
                 selectMenuArray.push({
-                    label: `${i + 1}. ${track.title}`,
+                    label: label,
                     description: track.author,
                     value: i.toString(),
                 });

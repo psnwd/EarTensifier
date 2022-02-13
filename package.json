@@ -10,6 +10,7 @@
     "development": "export NODE_ENV=development&&npm start",
     "ear2": "export NODE_ENV=ear2&&npm start",
     "ear3": "export NODE_ENV=ear3&&npm start",
+    "ear4": "export NODE_ENV=ear4&&npm start",
     "deploy-development-commands": "export NODE_ENV=production&&node ./src/scripts/deploy-commands.js",
     "deploy-production-commands": "export NODE_ENV=production&&node ./src/scripts/deploy-commands.js",
     "migrate-database": "export NODE_ENV=development&&node ./src/scripts/migrate-database.js"
@@ -25,9 +26,9 @@
   },
   "homepage": "https://github.com/Tetracyl/EarTensifier#readme",
   "dependencies": {
-    "@discordjs/rest": "^0.2.0-canary.0",
+    "@discordjs/rest": "^0.3.0",
     "@sentry/node": "^6.13.3",
-    "axios": "^0.24.0",
+    "axios": "^0.25.0",
     "blapi": "^2.2.1",
     "cors": "^2.8.5",
     "cpu-stat": "^2.0.1",
@@ -41,7 +42,7 @@
     "humanize-duration": "^3.27.0",
     "mongoose": "^6.0.12",
     "signale": "^1.4.0",
-    "statcord.js": "github:Tetracyl/statcord.js",
+    "statcord.js": "^3.4.1",
     "topgg-autoposter": "^2.0.0",
     "yasha": "github:ilikdoge/yasha"
   },

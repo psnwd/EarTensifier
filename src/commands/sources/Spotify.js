@@ -11,7 +11,7 @@ module.exports = class Spotify extends Command {
                 content: 'Plays a song or playlist from spotify.',
                 usage: '<search query>',
                 examples: [
-                    'https://open.spotify.com/track/1pKYYY0dkg23sQQXi0Q5zN?si=75df097fdbb54572',
+                    'Time',
                     'https://open.spotify.com/album/5uRdvUR7xCnHmUW8n64n9y?si=-x7dShkeTS-aqFvlDCG8GA',
                     'https://open.spotify.com/playlist/4ESFBGQQZEM426tyQo61Nt?si=8d376ef5dc2e403a',
                 ],
@@ -37,8 +37,6 @@ module.exports = class Spotify extends Command {
     }
 
     async run(client, ctx, args) {
-        if (!args[0].startsWith(client.config.urls.spotify)) return ctx.sendMessage('Please provide a valid Spotify URL.');
-
         await ctx.sendDeferMessage(`${client.config.emojis.typing} Searching for \`${args.join(' ')}\`...`);
 
         const query = args.slice(0).join(' ');
