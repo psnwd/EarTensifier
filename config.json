@@ -1,6 +1,6 @@
 {
     "prefix": "ear ",
-    "version": "2.1.0",
+    "version": "2.4.0",
     "website": "https://eartensifier.net/",
     "server": "https://discord.gg/xKgKMAP",
     "patreon": "https://www.patreon.com/eartensifier",
@@ -53,6 +53,9 @@
         "previous": "<:earprevious:916547288254513192>",
         "skip": "<:earskip:916547288216764426>",
         "resume": "<:earresume:916549575035203605>",
+        "addtoqueue": "<:earaddtoqueue:1014742212115968021>",
+        "loop": "<:earloop:1014762682840264704>",
+        "loopsong": "<:earloopsong:1014762681602945084>",
         "johncena": "<:johncena:919080542278914119>"
     },
     "channels": {

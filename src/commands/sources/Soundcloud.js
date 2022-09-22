@@ -2,6 +2,7 @@ const { Track: { TrackPlaylist } } = require('yasha');
 
 const Command = require('../../structures/Command');
 const QueueHelper = require('../../helpers/QueueHelper');
+const { ApplicationCommandOptionType, ApplicationCommandType, PermissionsBitField } = require('discord.js');
 
 module.exports = class Soundcloud extends Command {
     constructor(client) {
@@ -20,16 +21,17 @@ module.exports = class Soundcloud extends Command {
             voiceRequirements: {
                 isInVoiceChannel: true,
             },
+            type: ApplicationCommandType.String,
             options: [
                 {
                     name: 'query',
-                    type: 3,
+                    type: ApplicationCommandOptionType.String,
                     required: true,
                     description: 'The query to search for.',
                 },
             ],
             permissions: {
-                botPermissions: ['CONNECT', 'SPEAK'],
+                botPermissions: [PermissionsBitField.Flags.Connect, PermissionsBitField.Flags.Speak],
             },
             slashCommand: true,
         });
@@ -43,6 +45,7 @@ module.exports = class Soundcloud extends Command {
 
         let player = client.music.players.get(ctx.guild.id);
         if (!player) {
+            if (!ctx.member.voice.channel.joinable) return ctx.editMessage(`I could not join <#${ctx.member.voice.channel.id}> since it was full or I have insufficient permissions to join it.`);
             player = await client.music.newPlayer(ctx.guild, ctx.member.voice.channel, ctx.channel);
             player.connect();
         }

@@ -1,4 +1,5 @@
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
+const { ApplicationCommandOptionType } = require('discord.js');
 
 const Command = require('../../structures/Command');
 const Playlist = require('../../models/Playlist');
@@ -20,9 +21,10 @@ module.exports = class Load extends Command {
             options: [
                 {
                     name: 'playlist',
-                    type: 3,
+                    type: ApplicationCommandOptionType.String,
                     required: true,
                     description: 'The playlist\'s name.',
+                    autocomplete: true,
                 },
             ],
             slashCommand: true,
@@ -33,7 +35,9 @@ module.exports = class Load extends Command {
         await ctx.sendDeferMessage(`${client.config.emojis.typing} Queueing playlist (This might take a few seconds.)...`);
 
         let player = client.music.players.get(ctx.guild.id);
+
         if (!player) {
+            if (!ctx.member.voice.channel.joinable) return ctx.editMessage(`I could not join <#${ctx.member.voice.channel.id}> since it was full or I have insufficient permissions to join it.`);
             player = await client.music.newPlayer(ctx.guild, ctx.member.voice.channel, ctx.channel);
             player.connect();
         }
@@ -49,8 +53,8 @@ module.exports = class Load extends Command {
             if (err) client.logger.error(err);
 
             if (!playlist) {
-                const embed = new MessageEmbed()
-                    .setAuthor(playlistName, ctx.author.displayAvatarURL())
+                const embed = new EmbedBuilder()
+                    .setAuthor({ name: playlistName, iconURL: ctx.author.displayAvatarURL() })
                     .setDescription(`${client.config.emojis.failure} Could not find a playlist by the name ${playlistName}.`)
                     .setTimestamp()
                     .setColor(client.config.colors.default);
@@ -96,7 +100,7 @@ module.exports = class Load extends Command {
                 });
 
                 queueAllSongs.then(async () => {
-                    const embed = new MessageEmbed()
+                    const embed = new EmbedBuilder()
                         .setDescription(`Queued **${tracksQueued} songs** from **${playlistName}**.`)
                         .setColor(client.config.colors.default)
                         .setTimestamp();

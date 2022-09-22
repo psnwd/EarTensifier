@@ -1,4 +1,4 @@
-const { MessageEmbed } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
 
 const Command = require('../../structures/Command');
 
@@ -22,13 +22,15 @@ module.exports = class Previous extends Command {
 
     async run(client, ctx) {
         const player = client.music.players.get(ctx.guild.id);
-        if (!player.queue.previous) return ctx.sendMessage('There is no previous song.');
+        if (!player.queue.previous) return ctx.sendEphemeralMessage('There is no previous song.');
+        const current = player.queue.current;
         player.queue.unshift(player.queue.previous);
         player.skip();
 
-        const embed = new MessageEmbed()
+        player.queue.unshift(current);
+        const embed = new EmbedBuilder()
             .setColor(client.config.colors.default)
-            .setAuthor(`Backing up to ${player.queue.current.title}`, ctx.author.displayAvatarURL());
+            .setAuthor({ name: `Backing up to ${player.queue.current.title}`, iconURL: ctx.author.displayAvatarURL() });
         return ctx.sendMessage({ embeds: [embed] });
     }
 };
