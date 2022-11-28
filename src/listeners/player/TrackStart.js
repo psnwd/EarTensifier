@@ -2,8 +2,8 @@ const { EmbedBuilder, ButtonBuilder, ActionRowBuilder, ButtonStyle, PermissionsB
 
 const DatabaseHelper = require('../../helpers/DatabaseHelper');
 const Event = require('../../structures/Event');
-const formatDuration = require('../../utils/music/formatDuration');
-const missingPermissions = require('../../utils/music/missingPermissions');
+const formatDuration = require('../../utils/formatDuration');
+const missingPermissions = require('../../utils/missingPermissions');
 
 module.exports = class TrackStart extends Event {
     constructor(...args) {
@@ -60,10 +60,9 @@ module.exports = class TrackStart extends Event {
             if (missingPerms.length > 0) return;
             const embed = new EmbedBuilder()
                 .setColor(this.client.config.colors.default)
-                .setAuthor({ name: author, iconURL: player.playing ? 'https://eartensifier.net/images/cd.gif' : 'https://eartensifier.net/images/cd.png', url: url })
+                .setAuthor({ name: author, iconURL: player.playing ? 'https://eartensifier.net/images/cd.gif' : 'https://eartensifier.net/images/cd.png' })
                 .setThumbnail(thumbnail)
                 .setTitle(title)
-                .setURL(url)
                 .setFooter({ text: requester.username })
                 .setTimestamp();
             if (duration != -1) embed.setDescription(`${parsedCurrentDuration}  ${percentage < 0.05 ? this.client.config.emojis.progress7 : this.client.config.emojis.progress1}${this.client.config.emojis.progress2.repeat(part)}${percentage < 0.05 ? '' : this.client.config.emojis.progress3}${this.client.config.emojis.progress5.repeat(12 - part)}${this.client.config.emojis.progress6}  ${parsedDuration}`);

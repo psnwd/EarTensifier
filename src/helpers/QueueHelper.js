@@ -1,11 +1,11 @@
 const { EmbedBuilder } = require('discord.js');
-const formatDuration = require('../utils/music/formatDuration');
+const formatDuration = require('../utils/formatDuration');
 
 module.exports = class QueueHelper {
     static queuedEmbed(trackName, trackLink, trackDuration, tracks, trackRequester, color) {
         let embedString = 'Queued ';
         if (trackName && !trackLink) embedString += `**${trackName}**`;
-        if (trackName && trackLink) embedString += `**[${trackName}](${trackLink})**`;
+        if (trackName && trackLink) embedString += `**${trackName}**`;
         if (trackDuration && trackDuration != -1) embedString += ` [${formatDuration(trackDuration)}]`;
         if (tracks) embedString += ` (${tracks} tracks)`;
         if (trackRequester) {

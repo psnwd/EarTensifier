@@ -4,7 +4,7 @@ const { ApplicationCommandOptionType, ApplicationCommandType } = require('discor
 
 const Command = require('../../structures/Command');
 const Playlist = require('../../models/Playlist');
-const formatDuration = require('../../utils/music/formatDuration');
+const formatDuration = require('../../utils/formatDuration');
 
 module.exports = class View extends Command {
     constructor(client) {
@@ -26,7 +26,8 @@ module.exports = class View extends Command {
                     autocomplete: true,
                 },
             ],
-            slashCommand: true,
+            slashCommand: false,
+            enabled: false,
         });
     }
     async run(client, ctx, args) {
