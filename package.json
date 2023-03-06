@@ -43,7 +43,7 @@
     "fs": "^0.0.1-security",
     "genius-lyrics": "^4.4.0",
     "humanize-duration": "^3.27.0",
-    "mongoose": "^6.0.12",
+    "mongoose": "^7.0.1",
     "signale": "^1.4.0",
     "statcord.js": "^3.4.3",
     "topgg-autoposter": "^2.0.0",
