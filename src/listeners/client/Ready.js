@@ -12,6 +12,7 @@ module.exports = class Ready extends Event {
 
     async run() {
         if (process.env.MONGO_URL) {
+            mongoose.set("strictQuery", false);
             mongoose.connect(process.env.MONGO_URL, {
                 useNewUrlParser: true,
                 useUnifiedTopology: true,
